@@ -1,0 +1,2 @@
+[18-Apr-2024 01:14:46 America/New_York] PHP Fatal error:  Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.0". You are running 8.1.27. in /home/marbhktp/public_html/Nhcc/vendor/composer/platform_check.php on line 28
+[24-Apr-2024 12:52:48 Asia/Karachi] PHP Fatal error:  Cannot redeclare App\Http\Controllers\Admin\AdminToolController::updateCheckInStatus() in /home/marbhktp/public_html/Nhcc/app/Http/Controllers/Admin/AdminToolController.php on line 70
