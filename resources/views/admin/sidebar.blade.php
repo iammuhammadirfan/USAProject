@@ -72,6 +72,18 @@
             </li>
             <li class="s-nav-item dropdown-container">
                 <a href="#" class="nav-link s-dropdown-toggle">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span class="nav-label">Volunteers/Group</span>
+                    <span class="s-dropdown-icon material-symbols-rounded">keyboard_arrow_down</span></a>
+                <ul class="s-dropdown-menu">
+                    <li class="s-nav-item"><a href="/admin/get-single-ticket" class="nav-link dropdown-link">Volunteer Sign Up</a></li>
+                    <li class="s-nav-item"><a href="/admin/multiple-tickets-details/{{ Auth::user()->id }}" class="nav-link dropdown-link">Group Home Sign Up</a></li>
+                    <li class="s-nav-item"><a href="/admin/get-volunteer-signups" class="nav-link dropdown-link">Volunteer Checkin</a></li>
+                    <li class="s-nav-item"><a href="/admin/get-group-signups" class="nav-link dropdown-link">Approved Name</a></li>
+                </ul>
+            </li>
+            <li class="s-nav-item dropdown-container">
+                <a href="#" class="nav-link s-dropdown-toggle">
                    <i class="fa-solid fa-user-plus"></i>
                     <span class="nav-label">Recipients</span>
                     <span class="s-dropdown-icon material-symbols-rounded">keyboard_arrow_down</span></a>
