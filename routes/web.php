@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\VolunteerController;
 use App\Http\Controllers\Admin\AdminToolController;
 use App\Http\Controllers\Admin\ForgetController;
 use App\Http\Controllers\ContactController;
@@ -122,7 +123,8 @@ Route::group(['as'=>'admin.','prefix' => 'admin','middleware'=>['auth','admin']]
 
     Route::get('get-ticket-details', [TicketServiceController::class, 'get_ticket_details'])->name('get_ticket_details');
 
-    
+    Route::get('volunteer-approved-name', [VolunteerController::class, 'index'])->name('index');
+
     
     // Route::get('dashboard', [AdminController::class, 'index'])->name('dashboard');
     
