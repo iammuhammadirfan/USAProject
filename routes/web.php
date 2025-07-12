@@ -125,7 +125,7 @@ Route::group(['as'=>'admin.','prefix' => 'admin','middleware'=>['auth','admin']]
 
     Route::get('volunteer-approved-name', [VolunteerController::class, 'index'])->name('index');
 
-    
+    Route::get('volunteer-users-home', [VolunteerController::class, 'volunteer_users'])->name('volunteer_users');
     // Route::get('dashboard', [AdminController::class, 'index'])->name('dashboard');
     
     
@@ -142,6 +142,7 @@ Route::group(['as'=>'admin.','prefix' => 'admin','middleware'=>['auth','admin']]
     Route::get('get-users-without-tickets', [AdminController::class, 'get_users_without_tickets'])->name('get_users_without_tickets');
     Route::get('volunteer-group-home-users', [AdminController::class, 'volunteer_group_home_users'])->name('volunteer_group_home_users');
     Route::post('manage-volunteer-group-home-users', [AdminController::class, 'manage_volunteer_group_home_users'])->name('manage_volunteer_group_home_users');
+    Route::post('add-volunteer-users', [AdminController::class, 'add_volunteer_users'])->name('add_volunteer_users');
     Route::get('get-volunteer-group-home-users', [AdminController::class, 'get_volunteer_group_home_users'])->name('get_volunteer_group_home_users');
     Route::post('delete-volunteer-group-user', [AdminController::class, 'delete_volunteer_group_user'])->name('delete_volunteer_group_user');
 
@@ -256,6 +257,7 @@ Route::group(['as'=>'admin.','prefix' => 'admin','middleware'=>['auth','admin']]
     Route::get('check-case-number', [TicketServiceController::class, 'check_case_number'])->name('check_case_number');
 
     Route::get('verify-single-case-number', [TicketServiceController::class, 'verify_single_case_number'])->name('verify_single_case_number');
+    Route::get('verify-volunteer-case-number', [TicketServiceController::class, 'verify_volunteer_case_number'])->name('verify_volunteer_case_number');
 
     Route::get('one-ticket-details/{id}', [TicketServiceController::class, 'one_ticket_details'])->name('one_ticket_details');
 

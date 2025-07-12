@@ -151,27 +151,8 @@
             </style>
             @stop
                 <div class="row m-2">
-                    <div class="col-lg-4">
-                        <div class="title-holder" style="display:flex;align-items:center;justify-content:space-between;">
-                            <h4 style="margin-left:20px;">Approved Names</h4>
-                            <button type="button" id="clearSearch" class="btn btn-warning btn-sm">Clear</button>
-                        </div>
-                        
-                        <table id="volunteerGrouphomeUsersTable" class="table table-bordered">
-                            <thead class="bg-info text-white">
-                            <tr>
-                                <td>First Name</td>
-                                <td>Last Name</td>
-                                <td>Action</td>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-
-                        <span class="new-volunteer-group-user" button-type="add-new">Add New User</span>
-                    </div>
-                    <div class="col-lg-8">
+                    
+                    <div >
                         <h3 style="text-align: center;">Today Volunteer Signups</h3>
                         <table id="volunteerSignupsTable" class="table table-bordered" style="width:100%;">
                             <thead class="bg-info text-white">
