@@ -66,8 +66,8 @@
                 <ul class="s-dropdown-menu">
                     <li class="s-nav-item"><a href="/admin/get-single-ticket" class="nav-link dropdown-link">Single Ticket</a></li>
                     <li class="s-nav-item"><a href="/admin/multiple-tickets-details/{{ Auth::user()->id }}" class="nav-link dropdown-link">Multiple Tickets</a></li>
-                    <li class="s-nav-item"><a href="/admin/get-volunteer-signups" class="nav-link dropdown-link">Volunteer Sign Up</a></li>
-                    <li class="s-nav-item"><a href="/admin/get-group-signups" class="nav-link dropdown-link">Group Home Sign Up</a></li>
+                    <!-- <li class="s-nav-item"><a href="/admin/get-volunteer-signups" class="nav-link dropdown-link">Volunteer Sign Up</a></li>
+                    <li class="s-nav-item"><a href="/admin/get-group-signups" class="nav-link dropdown-link">Group Home Sign Up</a></li> -->
                 </ul>
             </li>
             <li class="s-nav-item dropdown-container">
@@ -77,8 +77,8 @@
                     <span class="s-dropdown-icon material-symbols-rounded">keyboard_arrow_down</span></a>
                 <ul class="s-dropdown-menu">
                     <li class="s-nav-item"><a href="/admin/get-volunteer-signups" class="nav-link dropdown-link">Volunteer Sign Up</a></li>
-                    <li class="s-nav-item"><a href="/admin/multiple-tickets-details/{{ Auth::user()->id }}" class="nav-link dropdown-link">Group Home Sign Up</a></li>
-                    <li class="s-nav-item"><a href="/admin/get-volunteer-signups" class="nav-link dropdown-link">Volunteer Checkin</a></li>
+                    <li class="s-nav-item"><a href="/admin/volunteer-group-home-sign-up" class="nav-link dropdown-link">Group Home Sign Up</a></li>
+                    <li class="s-nav-item"><a href="/admin/volunteer-check-in" class="nav-link dropdown-link">Volunteer Checkin</a></li>
                     <li class="s-nav-item"><a href="/admin/volunteer-approved-name" class="nav-link dropdown-link">Approved Name</a></li>
                 </ul>
             </li>

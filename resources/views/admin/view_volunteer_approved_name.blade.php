@@ -492,38 +492,6 @@
                 ]
             });
 
-            // volunteerSignupsTickets.on('page.dt', function() {
-
-            //     const pageLength = volunteerSignupsTickets.page.len();
-            // });
-
-
-            // $('#groupHomesSignupsTable').removeClass('table-striped');
-
-            // var groupHomesSignupsTickets = $('#groupHomesSignupsTable').DataTable({
-            //     stripeClasses: [],
-            //     columnDefs: [{
-            //         //"defaultContent": "-",
-            //         // "targets": "_all",
-            //         // "className": "text-center"
-            //         }],
-            //     lengthMenu:[10,25,50,100,{ label: 'All',value: -1 }],
-            //     "sDom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
-            //     processing:true,
-            //     serverside:true,
-            //     responsive:true,
-            //     "ajax": {
-            //         "url": "/admin/group-home-signups",
-            //         "type": "get",
-            //     },
-            //     columns: [
-            //         {  data: 'ticket_number',name:'ticket_number',orderable:true,searchable:true},
-            //         {  data: 'name',name:'name',orderable:true,searchable:true},
-            //         {  data: 'amount',name:'amount',orderable:true,searchable:true},
-            //         {  data: 'served',name:'served',orderable:true,searchable:true},
-            //         {  data: 'action',name:'action',orderable:true,searchable:true}
-            //     ]
-            // });
         });
 
         $(document).on('click', '.new-volunteer-group-user', function(e) {
