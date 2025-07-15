@@ -199,7 +199,7 @@ class LoginService
     /**
      * Get current time in specified timezone
      */
-    public function getCurrentTime($timezone = 'Asia/Karachi')
+    public function getCurrentTime($timezone = 'America/Vancouver')
     {
         $dateObj = new DateTime("now", new DateTimeZone($timezone));
         return [

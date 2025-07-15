@@ -24,7 +24,7 @@ class VolunteerController extends Controller
             ->get();
 
         // Format the data for the view
-        $formatted_users = $volunteer_users->map(function ($user) {
+        $users = $volunteer_users->map(function ($user) {
             return [
                 'id' => $user->id,
                 'name' => trim($user->first_name . ' ' . $user->last_name),
@@ -33,7 +33,7 @@ class VolunteerController extends Controller
             ];
         });
 
-        return view('admin.volunteer_group_home_signUp', compact('formatted_users'));
+        return view('admin.volunteer_group_home_signUp', compact('users'));
     }
 
     public function volunteer_checkIn(Request $request)

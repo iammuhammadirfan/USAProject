@@ -1090,7 +1090,7 @@ class TicketServiceController extends Controller
 
         // check if case number has a ticket already
         // $dateObj= new DateTime("now", new DateTimeZone("America/Vancouver"));
-        $dateObj = new DateTime("now", new DateTimeZone("Asia/Karachi"));
+        $dateObj = new DateTime("now", new DateTimeZone("America/Vancouver"));
 
         $todaysDate = $dateObj->format("Y-m-d");
         $parsedDate = Carbon::parse($todaysDate);
