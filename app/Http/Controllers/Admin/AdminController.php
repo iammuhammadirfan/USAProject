@@ -519,43 +519,66 @@ class AdminController extends Controller
 
     public function volunteer_group_home_users(Request $request)
     {
-        $groupHomeUsersData = DB::table('volunteer_group_homes_users')
-            ->where(['is_active' => 1])
+        $groupHomeUsersData = DB::table('volunteer_group_homes_users as vghu')
+            ->leftJoin('users as u', 'vghu.id', '=', 'u.volunteer_id')
+            ->where(['vghu.is_active' => 1])
             ->select(
-                'id',
-                'first_name',
-                'last_name'
+                'vghu.id',
+                'vghu.first_name',
+                'vghu.last_name',
+                DB::raw('GROUP_CONCAT(DISTINCT u.case_number SEPARATOR ", ") as case_numbers'),
+                DB::raw('GROUP_CONCAT(DISTINCT u.volunteer_id SEPARATOR ", ") as volunteer_ids')
             )
-            ->orderBy('id', 'ASC')
+            ->groupBy('vghu.id', 'vghu.first_name', 'vghu.last_name')
+            ->orderBy('vghu.id', 'ASC')
             ->get();
 
         $groupHomeUsersData = DataTables::of($groupHomeUsersData)
-
             ->addColumn('first_name', function ($row) {
                 return $row->first_name;
             })
             ->addColumn('last_name', function ($row) {
                 return $row->last_name;
             })
-            ->addColumn('action', function ($row) {
-
-                return '<div class="bg-warning datatable-dropdown">
-                    <a class="btn btn btn-sm  text-dark update-volunteer-group-user" button-type="edit-user" first-name=' . $row->first_name . ' last-name=' . $row->last_name . '  user-id=' . $row->id . ' href="#">Edit</a>
-                    <div class="dropdown">
-                        <button class="btn dropdown">
-                            <i class="fa-solid fa-caret-down"></i>
-                        </button>
-                        <div class="dropdown-content">
-                            <a class="dropdown-item text-dark delete-volunteer-group-user" user-id=' . $row->id . ' href="#">Delete</a>
-                        </div>
-                    </div>
-                </div>';
+            ->addColumn('case_numbers', function ($row) {
+                if ($row->case_numbers) {
+                    // Split case numbers and format them
+                    $caseNumbers = explode(', ', $row->case_numbers);
+                    $formattedCases = [];
+                    foreach ($caseNumbers as $index => $caseNumber) {
+                        if (!empty($caseNumber)) {
+                            $formattedCases[] = 'Case ' . ($index + 1) . ': ' . $caseNumber;
+                        }
+                    }
+                    return implode('<br>', $formattedCases);
+                }
+                return 'No Case Numbers';
             })
-
-            ->rawColumns(['first_name', 'last_name', 'action'])
+            ->addColumn('action', function ($row) {
+                return '<div class="bg-warning datatable-dropdown">
+                <a class="btn btn btn-sm text-dark update-volunteer-group-user" 
+                   button-type="edit-user" 
+                   first-name="' . $row->first_name . '" 
+                   last-name="' . $row->last_name . '" 
+                   case-numbers="' . ($row->case_numbers ? $row->case_numbers : '') . '" 
+                   volunteer-ids="' . ($row->volunteer_ids ? $row->volunteer_ids : '') . '" 
+                   user-id="' . $row->id . '" 
+                   href="#">Edit</a>
+                <div class="dropdown">
+                    <button class="btn dropdown">
+                        <i class="fa-solid fa-caret-down"></i>
+                    </button>
+                    <div class="dropdown-content">
+                        <a class="dropdown-item text-dark delete-volunteer-group-user" 
+                           user-id="' . $row->id . '" 
+                           href="#">Delete</a>
+                    </div>
+                </div>
+            </div>';
+            })
+            ->rawColumns(['first_name', 'last_name', 'case_numbers', 'action'])
             ->make(true);
 
-        //dd($groupHomeUsersData);die();
         return $groupHomeUsersData;
     }
 

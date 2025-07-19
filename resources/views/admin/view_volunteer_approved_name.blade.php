@@ -28,6 +28,50 @@
                     } */
 
     /* Styling the select element inside the DataTable */
+      .case-numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            min-height: 40px;
+        }
+        
+        .case-number-item {
+            background-color: #e9ecef;
+            border: 1px solid #adb5bd;
+            border-radius: 4px;
+            padding: 8px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .case-number-item:hover {
+            background-color: #dee2e6;
+            border-color: #6c757d;
+        }
+        
+        .case-number-item.selected {
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        .case-number-item.selected:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        
+        .no-case-numbers-message {
+            color: #6c757d;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
     .dt-length label {
         margin-left: 10px;
     }
@@ -150,7 +194,7 @@
 </style>
 @stop
 <div class="row m-2">
-    <div >
+    <div>
         <div class="title-holder" style="display:flex;align-items:center;justify-content:space-between;">
             <h4 style="margin-left:20px;">Approved Names</h4>
             <button type="button" id="clearSearch" class="btn btn-warning btn-sm">Clear</button>
@@ -170,129 +214,137 @@
 
     </div>
     <div class="modal fade" id="confirmUserServingModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-body">
-                            <p>Do you really want to change the serve status to <span class="new-serve-status"></span><p>
-                    </div>
-                    <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
-                        <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
-                        <a class="btn btn-warning waves-effect border border-dark continue-serve-confirmation-btn">Continue</a>
-                    </div>
-                    </div>
-                    </div>
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <p>Do you really want to change the serve status to <span class="new-serve-status"></span>
+                    <p>
                 </div>
+                <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
+                    <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
+                    <a class="btn btn-warning waves-effect border border-dark continue-serve-confirmation-btn">Continue</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="modal fade" id="confirmSignUpDeleteModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-body">
-                                <p>Are You sure you want to Delete the Sign Up?Click continue to proceed or cancel to keep.</p>
-                        </div>
-                        <div style="display: flex;
+    <div class="modal fade" id="confirmSignUpDeleteModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <p>Are You sure you want to Delete the Sign Up?Click continue to proceed or cancel to keep.</p>
+                </div>
+                <div style="display: flex;
                     justify-content: space-around;
                     align-items: center;
                     margin: 5px;">
-                            <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
-                            <a class="btn btn-warning waves-effect border border-dark continue-signup-delete-btn">Continue</a>
-                        </div>
-                        </div>
-                    </div>
+                    <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
+                    <a class="btn btn-warning waves-effect border border-dark continue-signup-delete-btn">Continue</a>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="modal fade" id="confirmUserDeleteModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-body">
-                                <p>Are You sure you want to Delete the User?Click continue to proceed or cancel to keep.</p>
-                        </div>
-                        <div style="display: flex;
+    <div class="modal fade" id="confirmUserDeleteModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <p>Are You sure you want to Delete the User?Click continue to proceed or cancel to keep.</p>
+                </div>
+                <div style="display: flex;
                     justify-content: space-around;
                     align-items: center;
                     margin: 5px;">
-                            <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
-                            <a class="btn btn-warning waves-effect border border-dark continue-user-delete-btn">Continue</a>
-                        </div>
-                        </div>
-                    </div>
+                    <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
+                    <a class="btn btn-warning waves-effect border border-dark continue-user-delete-btn">Continue</a>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="modal fade" id="newVolunteerGroupUserModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-title" style="text-align: center;">
-                                <h4 id="newVolunteerGroupUserTItle"></h4> 
-                            </div>
-                            <input class="user-id" type="hidden">
-                            <input class="volunteer-group-btn-type" type="hidden">
-                            <div class="modal-body">
-                                <div class="form-group">
-                                    <input class="first-name form-control" type="text" placeholder="First Name">
-                                </div>
-                                <div class="form-group">
-                                    <input class="last-name form-control" type="text" placeholder="Last Name">
-                                </div>
-                            </div>
-                            <ul style="list-style-type: none;text-align:left;" class="alert alert-warning d-none error-list col-12"></ul>
-                            <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
-                                <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
-                                <a class="btn btn-warning waves-effect border border-dark" id="newVolunteerGroupUserBtn">Save</a>
-                            </div>
+    <div class="modal fade" id="newVolunteerGroupUserModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-title" style="text-align: center;">
+                    <h4 id="newVolunteerGroupUserTItle"></h4>
+                </div>
+                <input class="user-id" type="hidden">
+                <input class="volunteer-group-btn-type" type="hidden">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <input class="first-name form-control" type="text" placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <input class="last-name form-control" type="text" placeholder="Last Name">
+                    </div>
+                    <!-- Add this case numbers section -->
+                   <div class="form-group case-numbers-section" style="display: none;">
+                        <label for="case-numbers-display">Case Numbers:</label>
+                        <div class="case-numbers-display case-numbers-grid">
+                            <span class="no-case-numbers-message">No case numbers available</span>
                         </div>
                     </div>
                 </div>
+                <ul style="list-style-type: none;text-align:left;" class="alert alert-warning d-none error-list col-12"></ul>
+                <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
+                    <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
+                    <a class="btn btn-warning waves-effect border border-dark" id="newVolunteerGroupUserBtn">Save</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="modal fade" id="newVolunteerGroupSignupModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-title" style="text-align: center;">
-                                <h4 id="newVolunteerGroupSignupTItle"></h4> 
-                            </div>
-                            <input class="volunteer-group-id" type="hidden">
-                            <div class="modal-body">
-                                <div class="form-group select-user-holder">
-                                    <label for="selectUser">User</label>
-                                    <select id="selectUser" class="form-control text-dark admin-select2 select-user" style="width: 100%;">
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <input class="volunteer-group-amount form-control" type="number" placeholder="Amount">
-                                </div>
-                                <input class="volunteer-group-type" type="hidden">
-                            </div>
-                            <ul style="list-style-type: none;" class="alert alert-warning d-none error-list col-12"></ul>
-                            <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
-                                <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
-                                <a class="btn btn-warning waves-effect border border-dark newVolunteerGroupSignupBtn">Save</a>
-                            </div>
-                        </div>
-                    </div>
+    <div class="modal fade" id="newVolunteerGroupSignupModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-title" style="text-align: center;">
+                    <h4 id="newVolunteerGroupSignupTItle"></h4>
                 </div>
-                <div class="modal fade" id="editVolunteerGroupSignupModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-title" style="text-align: center;">
-                                <h4 id="editVolunteerGroupSignupTItle">Edit Sign Up</h4> 
-                            </div>
-                            <input class="edit-volunteer-group-id" type="hidden">
-                            <div class="modal-body">
-                                <div class="form-group select-user-holder">
-                                    <label for="selectEditUser">User</label>
-                                    <select id="selectEditUser" class="form-control text-dark admin-select2 select-user" style="width: 100%;"></select>
-                                </div>
+                <input class="volunteer-group-id" type="hidden">
+                <div class="modal-body">
+                    <div class="form-group select-user-holder">
+                        <label for="selectUser">User</label>
+                        <select id="selectUser" class="form-control text-dark admin-select2 select-user" style="width: 100%;">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input class="volunteer-group-amount form-control" type="number" placeholder="Amount">
+                    </div>
+                    <input class="volunteer-group-type" type="hidden">
+                </div>
+                <ul style="list-style-type: none;" class="alert alert-warning d-none error-list col-12"></ul>
+                <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
+                    <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
+                    <a class="btn btn-warning waves-effect border border-dark newVolunteerGroupSignupBtn">Save</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="editVolunteerGroupSignupModal" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-title" style="text-align: center;">
+                    <h4 id="editVolunteerGroupSignupTItle">Edit Sign Up</h4>
+                </div>
+                <input class="edit-volunteer-group-id" type="hidden">
+                <div class="modal-body">
+                    <div class="form-group select-user-holder">
+                        <label for="selectEditUser">User</label>
+                        <select id="selectEditUser" class="form-control text-dark admin-select2 select-user" style="width: 100%;"></select>
+                    </div>
 
-                                <div class="form-group">
-                                    <input class="edit-volunteer-group-amount form-control" type="number" placeholder="Amount">
-                                </div>
-                            </div>
-                            <ul style="list-style-type: none;" class="alert alert-warning d-none error-list col-12"></ul>
-                            <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
-                                <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
-                                <a class="btn btn-warning waves-effect border border-dark editVolunteerGroupSignupBtn">Save</a>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <input class="edit-volunteer-group-amount form-control" type="number" placeholder="Amount">
                     </div>
                 </div>
+                <ul style="list-style-type: none;" class="alert alert-warning d-none error-list col-12"></ul>
+                <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
+                    <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
+                    <a class="btn btn-warning waves-effect border border-dark editVolunteerGroupSignupBtn">Save</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     @endsection
 
@@ -520,6 +572,8 @@
             var fName = $(this).attr('first-name');
 
             var lName = $(this).attr('last-name');
+            var caseNumbers = $(this).attr('case-numbers');
+            var volunteerIds = $(this).attr('volunteer-ids');
 
             var btnTypeAttr = $(this).attr('button-type');
 
@@ -540,7 +594,49 @@
             $('.last-name').val(lName);
 
             $('.error-list').html(" ").addClass('d-none');
+            // Show case numbers section for edit mode
+            $('.case-numbers-section').show();
 
+                 // Reset selected case numbers
+            selectedCaseNumbers = [];
+            
+            // Display case numbers in grid format
+            if (caseNumbers && caseNumbers.trim() !== '') {
+                var caseNumbersArray = caseNumbers.split(', ');
+                var gridHtml = '';
+                
+                caseNumbersArray.forEach(function(caseNumber, index) {
+                    if (caseNumber.trim() !== '') {
+                        gridHtml += '<div class="case-number-item" data-case-number="' + caseNumber.trim() + '">';
+                        gridHtml += caseNumber.trim();
+                        gridHtml += '</div>';
+                    }
+                });
+                
+                $('.case-numbers-display').html(gridHtml);
+            } else {
+                $('.case-numbers-display').html('<span class="no-case-numbers-message">No case numbers available</span>');
+            }
+        });
+// Handle case number selection
+        $(document).on('click', '.case-number-item', function() {
+            var caseNumber = $(this).data('case-number');
+            
+            if ($(this).hasClass('selected')) {
+                // Deselect case number
+                $(this).removeClass('selected');
+                selectedCaseNumbers = selectedCaseNumbers.filter(function(num) {
+                    return num !== caseNumber;
+                });
+            } else {
+                // Select case number
+                $(this).addClass('selected');
+                if (selectedCaseNumbers.indexOf(caseNumber) === -1) {
+                    selectedCaseNumbers.push(caseNumber);
+                }
+            }
+            
+            console.log('Selected case numbers:', selectedCaseNumbers);
         });
 
         $(document).on('click', '#newVolunteerGroupUserBtn', function(e) {
@@ -601,7 +697,7 @@
                             $('.error-list').append('<li>' + err_value + '</li>');
                         })
                     } else if (response.status == 500) {
-                        swal(response.message);
+                        alert(response.message);
                     }
 
                 }
