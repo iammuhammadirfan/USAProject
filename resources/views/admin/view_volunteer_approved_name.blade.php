@@ -28,50 +28,51 @@
                     } */
 
     /* Styling the select element inside the DataTable */
-      .case-numbers-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            min-height: 40px;
-        }
-        
-        .case-number-item {
-            background-color: #e9ecef;
-            border: 1px solid #adb5bd;
-            border-radius: 4px;
-            padding: 8px 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-weight: 500;
-        }
-        
-        .case-number-item:hover {
-            background-color: #dee2e6;
-            border-color: #6c757d;
-        }
-        
-        .case-number-item.selected {
-            background-color: #dc3545;
-            color: white;
-            border-color: #dc3545;
-        }
-        
-        .case-number-item.selected:hover {
-            background-color: #c82333;
-            border-color: #bd2130;
-        }
-        
-        .no-case-numbers-message {
-            color: #6c757d;
-            font-style: italic;
-            text-align: center;
-            padding: 20px;
-        }
+    .case-numbers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        min-height: 40px;
+    }
+
+    .case-number-item {
+        background-color: #e9ecef;
+        border: 1px solid #adb5bd;
+        border-radius: 4px;
+        padding: 8px 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+
+    .case-number-item:hover {
+        background-color: #dee2e6;
+        border-color: #6c757d;
+    }
+
+    .case-number-item.selected {
+        background-color: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
+
+    .case-number-item.selected:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+
+    .no-case-numbers-message {
+        color: #6c757d;
+        font-style: italic;
+        text-align: center;
+        padding: 20px;
+    }
+
     .dt-length label {
         margin-left: 10px;
     }
@@ -278,13 +279,19 @@
                         <input class="last-name form-control" type="text" placeholder="Last Name">
                     </div>
                     <!-- Add this case numbers section -->
-                   <div class="form-group case-numbers-section" style="display: none;">
+                    <div class="form-group case-numbers-section" style="display: none;">
                         <label for="case-numbers-display">Case Numbers:</label>
                         <div class="case-numbers-display case-numbers-grid">
                             <span class="no-case-numbers-message">No case numbers available</span>
                         </div>
+                        <button
+                            id="delete-case-button"
+                            class="btn btn-danger mt-3 d-none">
+                            Delete Selected Case
+                        </button>
                     </div>
                 </div>
+
                 <ul style="list-style-type: none;text-align:left;" class="alert alert-warning d-none error-list col-12"></ul>
                 <div style="display: flex;justify-content: space-around;align-items: center;margin: 5px;">
                     <a class="btn btn-warning waves-effect border border-dark close-modal">Cancel</a>
@@ -563,6 +570,7 @@
 
             $('.error-list').html(" ").addClass('d-none');
         });
+        let selectedCaseNumbers = [];
 
         $(document).on('click', '.update-volunteer-group-user', function(e) {
             e.preventDefault();
@@ -597,14 +605,14 @@
             // Show case numbers section for edit mode
             $('.case-numbers-section').show();
 
-                 // Reset selected case numbers
+            // Reset selected case numbers
             selectedCaseNumbers = [];
-            
+
             // Display case numbers in grid format
             if (caseNumbers && caseNumbers.trim() !== '') {
                 var caseNumbersArray = caseNumbers.split(', ');
                 var gridHtml = '';
-                
+
                 caseNumbersArray.forEach(function(caseNumber, index) {
                     if (caseNumber.trim() !== '') {
                         gridHtml += '<div class="case-number-item" data-case-number="' + caseNumber.trim() + '">';
@@ -612,31 +620,109 @@
                         gridHtml += '</div>';
                     }
                 });
-                
+
                 $('.case-numbers-display').html(gridHtml);
             } else {
                 $('.case-numbers-display').html('<span class="no-case-numbers-message">No case numbers available</span>');
             }
         });
-// Handle case number selection
+        // Handle case number selection
+        // $(document).on('click', '.case-number-item', function() {
+        //     var caseNumber = $(this).data('case-number');
+
+        //     if ($(this).hasClass('selected')) {
+        //         // Deselect case number
+        //         $(this).removeClass('selected bg-danger');
+        //         selectedCaseNumbers = selectedCaseNumbers.filter(function(num) {
+        //             return num !== caseNumber;
+        //         });
+        //     } else {
+        //         // Select case number
+        //         $(this).addClass('selected');
+        //         if (selectedCaseNumbers.indexOf(caseNumber) === -1) {
+        //             selectedCaseNumbers.push(caseNumber);
+        //         }
+        //     }
+
+        //     console.log('Selected case numbers:', selectedCaseNumbers);
+        // });
         $(document).on('click', '.case-number-item', function() {
             var caseNumber = $(this).data('case-number');
-            
+
             if ($(this).hasClass('selected')) {
-                // Deselect case number
-                $(this).removeClass('selected');
-                selectedCaseNumbers = selectedCaseNumbers.filter(function(num) {
-                    return num !== caseNumber;
-                });
+                $(this).removeClass('selected bg-danger');
+                selectedCaseNumbers = selectedCaseNumbers.filter(num => num !== caseNumber);
             } else {
-                // Select case number
-                $(this).addClass('selected');
-                if (selectedCaseNumbers.indexOf(caseNumber) === -1) {
-                    selectedCaseNumbers.push(caseNumber);
-                }
+                $(this).addClass('selected bg-danger');
+                selectedCaseNumbers.push(caseNumber);
             }
-            
-            console.log('Selected case numbers:', selectedCaseNumbers);
+
+            if (selectedCaseNumbers.length > 0) {
+                $('#delete-case-button').removeClass('d-none');
+            } else {
+                $('#delete-case-button').addClass('d-none');
+            }
+        });
+
+
+        $(document).on('click', '#delete-case-button', function(e) {
+            e.preventDefault();
+
+            $(this).prop("disabled", true).css("cursor", "not-allowed");
+
+            if (selectedCaseNumbers.length > 0) {
+                var userId = $('.user-id').val();
+                var csrf = document.querySelector('meta[name="csrf-token"]').content;
+                var url = '/admin/volunteer-assign-case_number-delete';
+
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    processData: false,
+                    contentType: false,
+                    data: function() {
+                        var data = new FormData();
+                        data.append('user_id', userId);
+                        data.append('case_numbers', JSON.stringify(selectedCaseNumbers));
+                        data.append('_token', csrf);
+                        return data;
+                        console.log(data)
+                    }(),
+                    success: function(response) {
+
+                        console.log(response);
+
+                        $('#delete-case-button').prop("disabled", false).css("cursor", "pointer");
+
+                        if (response.status == 200) {
+                            alert(response.message);
+                            selectedCaseNumbers.forEach(function(caseNumber) {
+
+                                $('.case-number-item[data-case-number="' + caseNumber + '"]').remove();
+
+                            });
+                            selectedCaseNumbers = [];
+                            $('#delete-case-button').addClass('d-none');
+
+                            alert(response.message);
+
+                        } else if (response.status == 405) {
+                            $('.error-list').html(" ").removeClass('d-none');
+                            $.each(response.message, function(key, err_value) {
+                                $('.error-list').append('<li>' + err_value + '</li>');
+                            })
+                        } else if (response.status == 500) {
+                            alert(response.message);
+                        }
+
+                    },
+                    error: function(xhr) {
+                        console.error(xhr);
+                        $('#delete-case-button').prop("disabled", false).css("cursor", "pointer");
+                        alert('Error deleting case numbers');
+                    }
+                });
+            }
         });
 
         $(document).on('click', '#newVolunteerGroupUserBtn', function(e) {

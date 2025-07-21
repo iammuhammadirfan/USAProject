@@ -175,6 +175,45 @@ class VolunteerController extends Controller
 
         return response()->json(['message' => 'Volunteer soft-deleted successfully']);
     }
+    public function assign_case_number_delete(Request $request)
+    {
+
+        $caseNumbers = $request->input('case_numbers');
+        $caseNumbers = json_decode($caseNumbers, true);
+
+        if (empty($caseNumbers)) {
+            return response()->json(['message' => 'No case numbers provided'], 400);
+        }
+        foreach ($caseNumbers as $caseNumber) {
+            DB::table('users')
+                ->where('case_number', $caseNumber)
+                ->update(['volunteer_id' => null]);
+        }
+        return response()->json([
+            'status' => 200,
+            'message' => 'Volunteer Case Numbers deleted successfully'
+        ], 200);
+    }
+   public function assignUp_case_delete(Request $request)
+{
+    $caseNumbers = $request->input('case_numbers'); // e.g., ["67368", "67403"]
+
+    if (empty($caseNumbers)) {
+        return response()->json(['message' => 'No case numbers provided'], 400);
+    }
+
+    foreach ($caseNumbers as $caseNumber) {
+        // Find the user by case number
+         DB::table('users')
+                ->where('id', $caseNumber)
+                ->update(['volunteer_id' => null]);
+    }
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'Volunteer Case Numbers updated one by one successfully'
+    ], 200);
+}
 
     public function volunteer_users()
     {
@@ -215,5 +254,21 @@ class VolunteerController extends Controller
             ->make(true);
 
         return view('admin.view_volunteer_approved_name', ['groupHomeUsersData' => $groupHomeUsersData]);
+    }
+    public function volunteer_getCaseNumber($id)
+    {
+        // $cases = DB::table('users')
+        //     ->where('volunteer_id', $id)
+        //     ->whereNotNull('case_number')
+        //     ->pluck('case_number');
+
+        $cases = DB::table('users')
+            ->where('volunteer_id', $id)
+            ->select('id', 'first_name', 'case_number')
+            ->orderBy('first_name')
+            ->get()
+            ->toArray();
+
+        return response()->json($cases);
     }
 }

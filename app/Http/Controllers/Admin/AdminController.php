@@ -899,6 +899,15 @@ class AdminController extends Controller
             ->select('volunteer_group_homes_tickets.id', 'volunteer_group_homes_tickets.amount', 'volunteer_group_homes_users.first_name', 'volunteer_group_homes_users.last_name', 'volunteer_group_homes_users.id as userID')
             ->first();
 
+        $caseNumbers = DB::table('users')
+            ->where('volunteer_id', function ($query) use ($id) {
+                $query->select('user_id')
+                    ->from('volunteer_group_homes_tickets')
+                    ->where('id', $id)
+                    ->limit(1);
+            })
+            ->select('volunteer_id', 'case_number')
+            ->get();
         $usersWithTickets = DB::table('volunteer_group_homes_tickets')
             ->whereDate('volunteer_group_homes_tickets.created_at', Carbon::today())
             ->where(['volunteer_group_homes_tickets.status' => 1, 'volunteer_group_homes_tickets.is_reset' => 0])
@@ -909,11 +918,13 @@ class AdminController extends Controller
             ->select('id', 'first_name', 'last_name')
             ->get();
 
+
         if ($details) {
             return response()->json([
                 'status' => 200,
                 'data' => $details,
-                'users_ids' => $selectedUsers
+                'users_ids' => $selectedUsers,
+                'case' => $caseNumbers
             ]);
         } else {
             return response()->json([

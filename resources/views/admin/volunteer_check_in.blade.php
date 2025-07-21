@@ -184,7 +184,7 @@
         <table id="volunteerSignupsTable" class="table table-bordered" style="width:100%;">
             <thead class="bg-info text-white">
                 <tr>
-                    <td>Number</td>
+                    <td>Name</td>
                     <td>Start Time</td>
                     <td>End Time </td>
                     <td>Duration</td>
@@ -280,9 +280,25 @@
                 {
                     data: 'id',
                     render: function(data, type, row) {
-                        return `
-                            <button class="btn btn-sm btn-primary" onclick="editRecord(${data})">Edit</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteRecord(${data})">Delete</button>                    `;
+                        return ` 
+                            <div class="bg-warning datatable-dropdown">
+                    <a class="btn btn btn-sm  text-dark update-volunteer-group-details" onclick="editRecord(${data})">Edit</a>
+                    <div class="dropdown">
+                        <button class="btn dropdown" fdprocessedid="hgm4l">
+                            <i class="fa-solid fa-caret-down"></i>
+                        </button>
+                        <div class="dropdown-content">
+                            <a class="dropdown-item text-dark delete-volunteer-group-details" onclick="deleteRecord(${data})">Delete</a>
+                        </div>
+                    </div>
+                </div>
+                            
+                            
+                            
+                            
+                            
+                            
+                            `;
                     }
                 },
             ]

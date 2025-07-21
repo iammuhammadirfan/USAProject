@@ -131,8 +131,13 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::get('volunteer-check-in/{id}/edit', [VolunteerController::class, 'edit'])->name('edit');
     Route::put('volunteer-check-in/{id}', [VolunteerController::class, 'update'])->name('update');
     Route::delete('volunteer-check-in/{id}', [VolunteerController::class, 'destroy'])->name('destroy');
+    
+    Route::post('volunteer-assign-case_number-delete', [VolunteerController::class, 'assign_case_number_delete'])->name('assign_case_number_delete');
+    Route::post('assignUp-case-delete', [VolunteerController::class, 'assignUp_case_delete'])->name('assignUp_case_delete');
 
     Route::get('volunteer-group-home-sign-up', [VolunteerController::class, 'volunteer_group_signUp'])->name('volunteer_group_signUp');
+    
+    Route::get('volunteer-cases-signup/{id}', [VolunteerController::class, 'volunteer_getCaseNumber'])->name('volunteer_getCaseNumber');
 
 
     // Route::get('number-control', [AdminController::class, 'number_control'])->name('number_control');
