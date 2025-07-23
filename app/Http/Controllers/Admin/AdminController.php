@@ -973,7 +973,7 @@ class AdminController extends Controller
 
             // $dateObject= new DateTime("now", new DateTimeZone("America/Vancouver"));
 
-            $dateObject = new DateTime("now", new DateTimeZone("America/Vancouver"));
+            $dateObject = new DateTime("now", new DateTimeZone("Asia/Karachi"));
 
             $todaysDate = $dateObject->format("Y-m-d");
 
