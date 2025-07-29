@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use Carbon\Carbon;
@@ -17,7 +18,7 @@ use Illuminate\Support\Str;
 class TicketService
 {
     protected $redis;
-    
+
     const TICKET_LUA = <<<'LUA'
         local counterKey = KEYS[1]      -- "tickets:counter:date"
         local issuedKey = KEYS[2]       -- "tickets:issued:date"
@@ -52,7 +53,7 @@ class TicketService
         return nextNumber
     LUA;
 
-    
+
     const TICKET_LUA_GET_CURRENT = <<<'LUA'
         local counterKey = KEYS[1]      -- "tickets:counter:date"
         local issuedKey = KEYS[2]       -- "tickets:issued:date"
@@ -87,7 +88,7 @@ class TicketService
     //         redis.call('SET', counterKey, ticketToIssue)
     //     end
 
-        
+
 
     //     -- Try to get a cancelled ticket (FIFO)
     //     local cancelledNumber = redis.call('LPOP', cancelledKey)
@@ -98,17 +99,17 @@ class TicketService
 
     //     -- No cancelled tickets, proceed with increment
     //     local nextNumber = redis.call('INCR', counterKey)
-        
+
     //     -- Handle race condition (duplicate number)
     //     if redis.call('HEXISTS', issuedKey, nextNumber) == 1 then
     //         nextNumber = maxIssued + 1
     //         redis.call('SET', counterKey, nextNumber)
     //     end
-        
+
     //     -- Update max number and mark as issued
     //     redis.call('HSET', maxNumbersKey, today, nextNumber)
     //     redis.call('HSET', issuedKey, nextNumber, lockToken)
-        
+
     //     return {nextNumber, latestNumber} -- {next, current}
     // LUA;
 
@@ -122,7 +123,7 @@ class TicketService
         // dd($request->all());die();
 
         $todaysDate = now()->format("Y-m-d");
-        
+
         // Check ticket limits
         if ($this->exceedsTicketLimit($todaysDate)) {
             return $this->limitExceededResponse();
@@ -131,9 +132,9 @@ class TicketService
         DB::beginTransaction();
         try {
             if ($request->input('submission_type') == 1) {
-                $result = $this->handleMultipleTickets($request,$todaysDate);
+                $result = $this->handleMultipleTickets($request, $todaysDate);
             } else {
-                $result = $this->handleSingleTicket($request,$todaysDate);
+                $result = $this->handleSingleTicket($request, $todaysDate);
             }
 
             DB::commit();
@@ -145,7 +146,6 @@ class TicketService
                 'ticket_id' => $result['ticket_id'] ?? null,
                 'message' => 'Ticket Generated Successfully.'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error("Ticket generation failed: " . $e->getMessage());
@@ -163,41 +163,38 @@ class TicketService
 
         $cancelled = $this->getCancelledTickets($todaysDate);
 
-        if($cancelledTicketsCount>0)
-        {
-            
+        if ($cancelledTicketsCount > 0) {
 
-            $replaced_tickets=$this->assignAndRemoveTickets($todaysDate,1);
+            $replaced_tickets = $this->assignAndRemoveTickets($todaysDate, 1);
 
             $ticketNumber = $replaced_tickets['removed'][0];
 
             DB::table('generated_tickets')
-            ->whereDate('created_at', $todaysDate)
-            ->where(['is_active' => 0, 'status' => 1,'ticket_number'=>$ticketNumber])
-            ->where('is_cancelled','!=', 0)
-            ->update([
-                'is_active' => 1,
-                'updated_at' => Carbon::now()
-            ]);
+                ->whereDate('created_at', $todaysDate)
+                ->where(['is_active' => 0, 'status' => 1, 'ticket_number' => $ticketNumber])
+                ->where('is_cancelled', '!=', 0)
+                ->update([
+                    'is_active' => 1,
+                    'updated_at' => Carbon::now()
+                ]);
 
             // \Log::info([
             //     'Assigned and removed tickets are ' => $replaced_tickets
             // ]);
 
-            \Log::info('cancelled single tickets found.Ticket to issue is '.$ticketNumber);
+            \Log::info('cancelled single tickets found.Ticket to issue is ' . $ticketNumber);
+        } elseif ($this->userHasTicketToday($request->userId, $todaysDate)) {
 
-        } elseif ($this->userHasTicketToday($request->userId,$todaysDate)) {
-            
             throw new \Exception('You already have a ticket for today');
         } else {
 
             $ticketNumber = $this->generateNextTicketNumber($todaysDate);
 
-            \Log::info('cancelled single tickets not found.Ticket to issue is '.$ticketNumber);
+            \Log::info('cancelled single tickets not found.Ticket to issue is ' . $ticketNumber);
         }
 
         // Create the ticket
-        return $this->createTicket($request->userId,$ticketNumber,$request->generatedBy,$request);
+        return $this->createTicket($request->userId, $ticketNumber, $request->generatedBy, $request);
     }
 
     protected function assignAndRemoveTickets($date, $count)
@@ -206,7 +203,7 @@ class TicketService
         $key = "tickets:cancelled:$date";
 
         $initialTickets = $this->getCancelledTickets($date);
-        
+
         // 2. Perform atomic removal
         $removedTickets = [];
         for ($i = 0; $i < $count; $i++) {
@@ -230,7 +227,7 @@ class TicketService
         ];
     }
 
-    protected function isCancelledAscending($array,$n)
+    protected function isCancelledAscending($array, $n)
     {
         if (count($array) < $n) {
             return false; // Not enough elements
@@ -245,18 +242,18 @@ class TicketService
             });
     }
 
-// protected function getNextTicketNumberWithNoCancelledTicket($date)
-// {
-//     return $this->redis->eval(
-//         self::TICKET_LUA_NO_CANCELLED,
-//         3, // Number of keys
-//         "tickets:counter:$date",
-//         "tickets:issued:$date",
-//         "tickets:max_numbers",
-//         $date,
-//         uniqid()
-//     );
-// }
+    // protected function getNextTicketNumberWithNoCancelledTicket($date)
+    // {
+    //     return $this->redis->eval(
+    //         self::TICKET_LUA_NO_CANCELLED,
+    //         3, // Number of keys
+    //         "tickets:counter:$date",
+    //         "tickets:issued:$date",
+    //         "tickets:max_numbers",
+    //         $date,
+    //         uniqid()
+    //     );
+    // }
 
 
     protected function handleMultipleTickets($request, $todaysDate)
@@ -299,8 +296,7 @@ class TicketService
             ->first(['ticket_number', 'created_at']);
 
         // Determine ticket numbers to assign
-        if ($latestTicket === null) 
-        {
+        if ($latestTicket === null) {
             // First tickets of the day
             $ticketNumbers = range(1, $userIdsCount);
             Redis::set("tickets:counter:$todaysDate", $userIdsCount);
@@ -310,9 +306,9 @@ class TicketService
 
             $cancelled = $this->getCancelledTickets($todaysDate);
 
-            if ((count($cancelled) > 0 && count($cancelled) > $userIdsCount) || 
-            (count($cancelled) > 0 && count($cancelled) == $userIdsCount)) 
-            {
+            if ((count($cancelled) > 0 && count($cancelled) > $userIdsCount) ||
+                (count($cancelled) > 0 && count($cancelled) == $userIdsCount)
+            ) {
                 // $ticketNumbers = $cancelled->take($ticketsFromCancelled)->all();
 
                 //  \Log::info('the tickets are sequential and count is'.$userIdsCount);
@@ -323,27 +319,26 @@ class TicketService
                     'tickets' => $cancelledSequentialTickets
                 ]);
 
-                if ($this->isCancelledAscending($cancelled, $userIdsCount))
-                {
+                if ($this->isCancelledAscending($cancelled, $userIdsCount)) {
                     $ticketsToUpdate = DB::table('generated_tickets')
-                         ->where('is_cancelled','!=',0)
-                        ->where(['is_active'=>0,'status' => 1])
+                        ->where('is_cancelled', '!=', 0)
+                        ->where(['is_active' => 0, 'status' => 1])
                         ->whereDate('created_at', $todaysDate)
-                        ->select('id','ticket_number')
+                        ->select('id', 'ticket_number')
                         ->orderBy('ticket_number', 'asc')
                         ->limit($userIdsCount)
                         ->get();
 
                     $ticketNumbers = DB::table('generated_tickets')
-                        ->where('is_cancelled','!=',0)
-                        ->where(['is_active'=>0,'status' => 1])
+                        ->where('is_cancelled', '!=', 0)
+                        ->where(['is_active' => 0, 'status' => 1])
                         ->whereDate('created_at', $todaysDate)
                         ->orderBy('ticket_number', 'asc')
                         ->limit($userIdsCount)
                         ->pluck('ticket_number')
                         ->toArray();
 
-                    \Log::info('the tickets are sequential and count is '.$userIdsCount);
+                    \Log::info('the tickets are sequential and count is ' . $userIdsCount);
 
                     DB::table('generated_tickets')
                         ->whereIn('id', $ticketsToUpdate->select('id'))
@@ -352,15 +347,15 @@ class TicketService
                             'updated_at' => Carbon::now()
                         ]);
 
-                    $this->assignAndRemoveTickets($todaysDate,$userIdsCount);
+                    $this->assignAndRemoveTickets($todaysDate, $userIdsCount);
 
                     \Log::info($ticketNumbers);
                 } else {
                     \Log::info('the tickets are not sequential');
 
-                    $currentDbTicket = ($this->generateNextMultipleTicketNumber($todaysDate))+1;
+                    $currentDbTicket = ($this->generateNextMultipleTicketNumber($todaysDate)) + 1;
 
-                    $next_ticket = $currentDbTicket+$userIdsCount-1;
+                    $next_ticket = $currentDbTicket + $userIdsCount - 1;
 
                     for ($i = 0; $i < $userIdsCount; $i++) {
                         $ticketNumbers[] = $currentDbTicket + $i;
@@ -368,27 +363,25 @@ class TicketService
 
                     Redis::set("tickets:counter:$todaysDate", $next_ticket);
                 }
-            }  else if(count($cancelled) > 0 && $userIdsCount > count($cancelled))
-            {
-                $currentDbTicket = ($this->generateNextMultipleTicketNumber($todaysDate))+1;
+            } else if (count($cancelled) > 0 && $userIdsCount > count($cancelled)) {
+                $currentDbTicket = ($this->generateNextMultipleTicketNumber($todaysDate)) + 1;
 
-                \Log::info('cancelled tickets found and user has more ticket requests than cancelled tickets.Ticket will start from '.$currentDbTicket);
+                \Log::info('cancelled tickets found and user has more ticket requests than cancelled tickets.Ticket will start from ' . $currentDbTicket);
 
-                $next_ticket = $currentDbTicket+$userIdsCount-1;
+                $next_ticket = $currentDbTicket + $userIdsCount - 1;
 
                 for ($i = 0; $i < $userIdsCount; $i++) {
                     $ticketNumbers[] = $currentDbTicket + $i;
                 }
 
                 Redis::set("tickets:counter:$todaysDate", $next_ticket);
-            } else if(count($cancelled) == 0)
-            {
-               
-                $currentDbTicket = ($this->generateNextMultipleTicketNumber($todaysDate))+1;
+            } else if (count($cancelled) == 0) {
 
-                 \Log::info('cancelled tickets not found and ticket will start from '.$currentDbTicket);
+                $currentDbTicket = ($this->generateNextMultipleTicketNumber($todaysDate)) + 1;
 
-                $next_ticket = $currentDbTicket+$userIdsCount-1;
+                \Log::info('cancelled tickets not found and ticket will start from ' . $currentDbTicket);
+
+                $next_ticket = $currentDbTicket + $userIdsCount - 1;
 
                 for ($i = 0; $i < $userIdsCount; $i++) {
                     $ticketNumbers[] = $currentDbTicket + $i;
@@ -430,12 +423,11 @@ class TicketService
             session()->forget(['returnTimesStatus', 'ticketsReturnTimes']);
         }
 
-        if (in_array(Auth::user()->role, [1, 3]))
-        {
+        if (in_array(Auth::user()->role, [1, 3])) {
             $firstTicket = DB::table('generated_tickets')
-            ->where('multiple_id', $randomNumberId)
-            ->select('id')
-            ->first();
+                ->where('multiple_id', $randomNumberId)
+                ->select('id')
+                ->first();
 
             DB::table('activity_log')->insertGetId([
                 'staff_id' => Auth::user()->id,
@@ -455,12 +447,12 @@ class TicketService
         ];
     }
 
-    
+
     protected function userHasTicketToday($userId, $date)
     {
         return DB::table('generated_tickets')
             ->whereDate('created_at', $date)
-            ->where(['user_id'=>$userId,'is_cancelled'=>0,'status'=>1])
+            ->where(['user_id' => $userId, 'is_cancelled' => 0, 'status' => 1])
             ->exists();
     }
 
@@ -468,7 +460,7 @@ class TicketService
     {
         return DB::table('generated_tickets')
             ->whereDate('created_at', $date)
-            ->where(['ticket_number'=>$ticket,'is_cancelled'=>0,'status'=>1])
+            ->where(['ticket_number' => $ticket, 'is_cancelled' => 0, 'status' => 1])
             ->exists();
     }
 
@@ -491,24 +483,49 @@ class TicketService
     protected function generateNextTicketNumber($date)
     {
         $lockToken = uniqid();
-        
-        return $this->redis->eval(
-            self::TICKET_LUA,
-            4, // Number of keys
-            "tickets:counter:$date",
-            "tickets:issued:$date",
-            "tickets:cancelled:$date",
-            "tickets:max_numbers",
-            $date,
-            $lockToken
-        );
+
+        // return $this->redis->eval(
+        //     self::TICKET_LUA,
+        //     4, // Number of keys
+        //     "tickets:counter:$date",
+        //     "tickets:issued:$date",
+        //     "tickets:cancelled:$date",
+        //     "tickets:max_numbers",
+        //     $date,
+        //     $lockToken
+        // );
+        while (true) {
+            $ticketNumber = $this->redis->eval(
+                self::TICKET_LUA,
+                4,
+                "tickets:counter:$date",
+                "tickets:issued:$date",
+                "tickets:cancelled:$date",
+                "tickets:max_numbers",
+                $date,
+                $lockToken
+            );
+
+            // Check if same ticket number already exists for this ID
+            $exists = DB::table('generated_tickets')
+                ->where('ticket_number', $ticketNumber)
+                ->exists();
+
+            if (!$exists) {
+                return $ticketNumber;
+            }
+
+            // Optional: remove conflicting ticket number from Redis issued set
+            // $this->redis->srem("tickets:issued:$date", $ticketNumber);
+        }
     }
 
     protected function generateNextMultipleTicketNumber($date)
     {
         $lockToken = Str::uuid()->toString();
+    while (true) {
 
-        return (int) Redis::eval(
+        $ticketNumber =  (int) Redis::eval(
             self::TICKET_LUA_GET_CURRENT,
             3, // Number of Redis KEYS
             "tickets:counter:$date",
@@ -517,26 +534,38 @@ class TicketService
             now()->format('Y-m-d'),
             $lockToken
         );
+         // Check uniqueness in DB
+        $exists = DB::table('generated_tickets')
+            ->where('ticket_number', $ticketNumber)
+            ->exists();
+
+        if (!$exists) {
+            return $ticketNumber;
+        }
+
+        // Optional: clean Redis issued set if needed
+        // Redis::srem("tickets:issued:$date", $ticketNumber);
+    }
     }
 
     protected function getCancelledTickets($date)
     {
         $cancelledTicketsKey = "tickets:cancelled:$date";
-        
+
         // Get all cancelled ticket numbers from Redis
         $cancelledTickets = $this->redis->lrange($cancelledTicketsKey, 0, -1);
-        
+
         // Convert to integers and sort chronologically
         $cancelledTickets = array_map('intval', $cancelledTickets);
         sort($cancelledTickets);
-        
+
         return $cancelledTickets;
     }
 
-    protected function createTicket($userId,$ticketNumber,$generatedBy,$request)
+    protected function createTicket($userId, $ticketNumber, $generatedBy, $request)
     {
-        \Log::info($userId.','.$ticketNumber.','.$generatedBy);
-        
+        \Log::info($userId . ',' . $ticketNumber . ',' . $generatedBy);
+
         $ticketId = DB::table('generated_tickets')->insertGetId([
             'user_id' => $userId,
             'is_first' => 1,
@@ -550,9 +579,9 @@ class TicketService
         // Handle return times
         if (session('returnTimesStatus') == 1) {
             $projectedReturnTime = collect(session('ticketsReturnTimes'))
-                ->firstWhere(fn($rt) => $ticketNumber >= $rt->start_ticket 
-                                    && $ticketNumber <= $rt->end_ticket)?->time ?? null;
-            
+                ->firstWhere(fn($rt) => $ticketNumber >= $rt->start_ticket
+                    && $ticketNumber <= $rt->end_ticket)?->time ?? null;
+
             $savedTicketDetails->update(['projected_return_time' => $projectedReturnTime]);
             session()->forget(['returnTimesStatus', 'ticketsReturnTimes']);
         }
@@ -569,8 +598,7 @@ class TicketService
             session()->forget(['is_bot']);
         }
 
-        if (in_array(Auth::user()->role, [1, 3]))
-        {
+        if (in_array(Auth::user()->role, [1, 3])) {
             DB::table('activity_log')->insertGetId([
                 'staff_id' => Auth::user()->id,
                 'user_id' => $userId,
@@ -603,8 +631,10 @@ class TicketService
                 ->where(['status' => 1, 'is_active' => 1])
                 ->count();
 
-            if ($ticketLimitChecker->ticket_limit_status == 1 && 
-                $totalTickets > $ticketLimitChecker->ticket_limit) {
+            if (
+                $ticketLimitChecker->ticket_limit_status == 1 &&
+                $totalTickets > $ticketLimitChecker->ticket_limit
+            ) {
                 return true;
             }
         }
@@ -628,9 +658,9 @@ class TicketService
             ->whereDate('created_at', Carbon::today())
             ->count();
 
-        $maxTicketsLimitData = ($newTotalTicketsCount >= $ticketLimitChecker->ticket_limit && 
-                            $ticketLimitChecker->ticket_limit_status == 1) ? 1 : 0;
-        
+        $maxTicketsLimitData = ($newTotalTicketsCount >= $ticketLimitChecker->ticket_limit &&
+            $ticketLimitChecker->ticket_limit_status == 1) ? 1 : 0;
+
         event(new MaxTicketsReached($maxTicketsLimitData));
         event(new TicketsAnalytics(generatedTicket::tickets_analytics()));
     }

@@ -71,7 +71,7 @@ return [
     */
 
     
-    'timezone' => 'America/Vancouver',
+    'timezone' => 'Asia/Karachi',
     // 'timezone' => 'America/Vancouver',
 
     /*
