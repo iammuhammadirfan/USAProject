@@ -92,7 +92,7 @@ class LoginController extends Controller
             session()->put('maxTicketsReachedId', 1);
         }
 
-        $dateObj= new DateTime("now", new DateTimeZone("Asia/Karachi"));
+        $dateObj= new DateTime("now", new DateTimeZone("America/Vancouver"));
         $extractedCurrentTime= $dateObj->format("H:i");
         $todaysDate=$dateObj->format("Y-m-d");
         $dayOfTheWeek=strtolower(date('l', strtotime($todaysDate)));

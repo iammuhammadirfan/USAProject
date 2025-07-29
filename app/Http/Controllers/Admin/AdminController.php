@@ -442,7 +442,6 @@ public function get_tickets(Request $request){
                 return $row->ticket_number;
             })
             ->addColumn('fname', function ($row) {
-                return 
                 '<span>' . $row->firstName .'</span';
             })
             ->addColumn('lname', function ($row) {
@@ -701,9 +700,10 @@ public function manage_volunteer_group_home_users(Request $request)
                     'last_name' => $data['last_name'],
                     'created_at' => $date_created,
                     'updated_at' => $date_created
-                ]);
+                ]); 
+                
 
-                $msg='User registered successfully.';
+                $msg='User registered successfull vy.';
 
                 DB::table('activity_log')->insertGetId([
                     'staff_id' => Auth::user()->id,
