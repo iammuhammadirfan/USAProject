@@ -78,8 +78,8 @@
                 <ul class="s-dropdown-menu">
                     <li class="s-nav-item"><a href="/admin/get-volunteer-signups" class="nav-link dropdown-link">Volunteer Sign Up</a></li>
                     <li class="s-nav-item"><a href="/admin/volunteer-group-home-sign-up" class="nav-link dropdown-link">Group Home Sign Up</a></li>
-                    <li class="s-nav-item"><a href="/admin/volunteer-check-in" class="nav-link dropdown-link">Volunteer Checkin</a></li>
-                    <li class="s-nav-item"><a href="/admin/volunteer-approved-name" class="nav-link dropdown-link">Approved Name</a></li>
+                    <li class="s-nav-item"><a href="/admin/volunteer-check-in" class="nav-link dropdown-link">Volunteer Check In</a></li>
+                    <li class="s-nav-item"><a href="/admin/volunteer-approved-name" class="nav-link dropdown-link">Approved Names</a></li>
                 </ul>
             </li>
             <li class="s-nav-item dropdown-container">
