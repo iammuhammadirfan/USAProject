@@ -483,18 +483,14 @@ class TicketService
     protected function generateNextTicketNumber($date)
     {
         $lockToken = uniqid();
+        $dateStart = "$date 00:00:00";
+        $dateEnd = "$date 23:59:59";
 
-        // return $this->redis->eval(
-        //     self::TICKET_LUA,
-        //     4, // Number of keys
-        //     "tickets:counter:$date",
-        //     "tickets:issued:$date",
-        //     "tickets:cancelled:$date",
-        //     "tickets:max_numbers",
-        //     $date,
-        //     $lockToken
-        // );
+        // Static cache to store today's max ticket number to reduce DB queries in same request
+        static $maxTicketNumberCache = [];
+
         while (true) {
+            // Step 1: Try getting ticket number from Redis atomically via Lua script
             $ticketNumber = $this->redis->eval(
                 self::TICKET_LUA,
                 4,
@@ -506,46 +502,94 @@ class TicketService
                 $lockToken
             );
 
-            // Check if same ticket number already exists for this ID
-            $exists = DB::table('generated_tickets')
+            // Step 2: Check if ticket number exists in DB for today
+            $existsSameDate = DB::table('generated_tickets')
                 ->where('ticket_number', $ticketNumber)
+                ->whereBetween('created_at', [$dateStart, $dateEnd])
                 ->exists();
 
-            if (!$exists) {
+            if (!$existsSameDate) {
                 return $ticketNumber;
             }
 
-            // Optional: remove conflicting ticket number from Redis issued set
-            // $this->redis->srem("tickets:issued:$date", $ticketNumber);
+            // Step 3: If Redis gave duplicate, fallback to DB max + 1
+            if (!isset($maxTicketNumberCache[$date])) {
+                $maxTicketNumberCache[$date] = DB::table('generated_tickets')
+                    ->whereBetween('created_at', [$dateStart, $dateEnd])
+                    ->max('ticket_number') ?? 0;
+            }
+
+            $ticketNumber = ++$maxTicketNumberCache[$date];
+
+            // Step 4: Final safety check before returning (in case of race condition)
+            $existsAgain = DB::table('generated_tickets')
+                ->where('ticket_number', $ticketNumber)
+                ->whereBetween('created_at', [$dateStart, $dateEnd])
+                ->exists();
+
+            if (!$existsAgain) {
+                return $ticketNumber;
+            }
+
+            // Optional: Clean up Redis issued set in case of duplication
+            // This avoids infinite loop if Redis keeps giving the same duplicate
+            $this->redis->srem("tickets:issued:$date", $ticketNumber);
         }
     }
+
 
     protected function generateNextMultipleTicketNumber($date)
     {
         $lockToken = Str::uuid()->toString();
-    while (true) {
+        $dateStart = "$date 00:00:00";
+        $dateEnd = "$date 23:59:59";
 
-        $ticketNumber =  (int) Redis::eval(
-            self::TICKET_LUA_GET_CURRENT,
-            3, // Number of Redis KEYS
-            "tickets:counter:$date",
-            "tickets:issued:$date",
-            "tickets:max_numbers",
-            now()->format('Y-m-d'),
-            $lockToken
-        );
-         // Check uniqueness in DB
-        $exists = DB::table('generated_tickets')
+        // Static cache to store today's max ticket number to reduce DB queries in same request
+        static $maxTicketNumberCache = [];
+        while (true) {
+
+            $ticketNumber =  (int) Redis::eval(
+                self::TICKET_LUA_GET_CURRENT,
+                3, // Number of Redis KEYS
+                "tickets:counter:$date",
+                "tickets:issued:$date",
+                "tickets:max_numbers",
+                now()->format('Y-m-d'),
+                $lockToken
+            );
+            // Step 2: Check if ticket number exists in DB for today
+        $existsSameDate = DB::table('generated_tickets')
             ->where('ticket_number', $ticketNumber)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
             ->exists();
 
-        if (!$exists) {
+        if (!$existsSameDate) {
             return $ticketNumber;
         }
 
-        // Optional: clean Redis issued set if needed
-        // Redis::srem("tickets:issued:$date", $ticketNumber);
-    }
+        // Step 3: If Redis gave duplicate, fallback to DB max + 1
+        if (!isset($maxTicketNumberCache[$date])) {
+            $maxTicketNumberCache[$date] = DB::table('generated_tickets')
+                ->whereBetween('created_at', [$dateStart, $dateEnd])
+                ->max('ticket_number') ?? 0;
+        }
+
+        $ticketNumber = ++$maxTicketNumberCache[$date];
+
+        // Step 4: Final safety check before returning (in case of race condition)
+        $existsAgain = DB::table('generated_tickets')
+            ->where('ticket_number', $ticketNumber)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
+            ->exists();
+
+        if (!$existsAgain) {
+            return $ticketNumber;
+        }
+
+        // Optional: Clean up Redis issued set in case of duplication
+        // This avoids infinite loop if Redis keeps giving the same duplicate
+        $this->redis->srem("tickets:issued:$date", $ticketNumber);
+        }
     }
 
     protected function getCancelledTickets($date)
