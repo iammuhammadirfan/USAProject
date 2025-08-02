@@ -517,55 +517,43 @@ class TicketService
         $dateStart = "$date 00:00:00";
         $dateEnd = "$date 23:59:59";
 
-        // Static cache to store today's max ticket number to reduce DB queries in same request
-        static $maxTicketNumberCache = [];
+         // Step 1: Always call Redis to bump counter and reserve ticket number
+        $redisTicket = (int) Redis::eval(
+            self::TICKET_LUA,
+            4, // Number of keys
+            "tickets:counter:$date",
+            "tickets:issued:$date",
+            "tickets:cancelled:$date",
+            "tickets:max_numbers",
+            $date,
+            $lockToken
+        );
 
-        while (true) {
-            // Step 1: Try getting ticket number from Redis atomically via Lua script
-            $ticketNumber = $this->redis->eval(
-                self::TICKET_LUA,
-                4,
-                "tickets:counter:$date",
-                "tickets:issued:$date",
-                "tickets:cancelled:$date",
-                "tickets:max_numbers",
-                $date,
-                $lockToken
-            );
+        // Step 2: Get inactive (canceled) ticket numbers in ASCENDING order
+        $inactiveTickets = DB::table('generated_tickets')
+            ->where('is_active', 0)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
+            ->orderBy('ticket_number', 'asc') // 👈 Ensures correct order!
+            ->pluck('ticket_number')
+            ->toArray();
 
-            // Step 2: Check if ticket number exists in DB for today
-            $existsSameDate = DB::table('generated_tickets')
-                ->where('ticket_number', $ticketNumber)
-                ->whereBetween('created_at', [$dateStart, $dateEnd])
-                ->exists();
+        // Step 3: Get active (already used) ticket numbers
+        $activeTickets = DB::table('generated_tickets')
+            ->where('is_active', 1)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
+            ->pluck('ticket_number')
+            ->toArray();
 
-            if (!$existsSameDate) {
-                return $ticketNumber;
-            }
+        // Step 4: Find reusable ticket numbers
+        $reusableTickets = array_values(array_diff($inactiveTickets, $activeTickets));
 
-            // Step 3: If Redis gave duplicate, fallback to DB max + 1
-            if (!isset($maxTicketNumberCache[$date])) {
-                $maxTicketNumberCache[$date] = DB::table('generated_tickets')
-                    ->whereBetween('created_at', [$dateStart, $dateEnd])
-                    ->max('ticket_number') ?? 0;
-            }
-
-            $ticketNumber = ++$maxTicketNumberCache[$date];
-
-            // Step 4: Final safety check before returning (in case of race condition)
-            $existsAgain = DB::table('generated_tickets')
-                ->where('ticket_number', $ticketNumber)
-                ->whereBetween('created_at', [$dateStart, $dateEnd])
-                ->exists();
-
-            if (!$existsAgain) {
-                return $ticketNumber;
-            }
-
-            // Optional: Clean up Redis issued set in case of duplication
-            // This avoids infinite loop if Redis keeps giving the same duplicate
-            $this->redis->srem("tickets:issued:$date", $ticketNumber);
+        // Step 5: Reassign canceled tickets in ascending order
+        if (!empty($reusableTickets)) {
+            return $reusableTickets[0]; // assign first (lowest) one
         }
+
+        // Otherwise use Redis-generated ticket number
+        return $redisTicket;
     }
 
 
@@ -575,52 +563,42 @@ class TicketService
         $dateStart = "$date 00:00:00";
         $dateEnd = "$date 23:59:59";
 
-        // Static cache to store today's max ticket number to reduce DB queries in same request
-        static $maxTicketNumberCache = [];
-        while (true) {
+        // Step 1: Always call Redis to bump counter and reserve ticket number
+        $redisTicket = (int) Redis::eval(
+            self::TICKET_LUA_GET_CURRENT,
+            3,
+            "tickets:counter:$date",
+            "tickets:issued:$date",
+            "tickets:max_numbers",
+            now()->format('Y-m-d'),
+            $lockToken
+        );
 
-            $ticketNumber =  (int) Redis::eval(
-                self::TICKET_LUA_GET_CURRENT,
-                3, // Number of Redis KEYS
-                "tickets:counter:$date",
-                "tickets:issued:$date",
-                "tickets:max_numbers",
-                now()->format('Y-m-d'),
-                $lockToken
-            );
-            // Step 2: Check if ticket number exists in DB for today
-            $existsSameDate = DB::table('generated_tickets')
-                ->where('ticket_number', $ticketNumber)
-                ->whereBetween('created_at', [$dateStart, $dateEnd])
-                ->exists();
+        // Step 2: Get inactive (canceled) ticket numbers in ASCENDING order
+        $inactiveTickets = DB::table('generated_tickets')
+            ->where('is_active', 0)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
+            ->orderBy('ticket_number', 'asc') // 👈 Ensures correct order!
+            ->pluck('ticket_number')
+            ->toArray();
 
-            if (!$existsSameDate) {
-                return $ticketNumber;
-            }
+        // Step 3: Get active (already used) ticket numbers
+        $activeTickets = DB::table('generated_tickets')
+            ->where('is_active', 1)
+            ->whereBetween('created_at', [$dateStart, $dateEnd])
+            ->pluck('ticket_number')
+            ->toArray();
 
-            // Step 3: If Redis gave duplicate, fallback to DB max + 1
-            if (!isset($maxTicketNumberCache[$date])) {
-                $maxTicketNumberCache[$date] = DB::table('generated_tickets')
-                    ->whereBetween('created_at', [$dateStart, $dateEnd])
-                    ->max('ticket_number') ?? 0;
-            }
+        // Step 4: Find reusable ticket numbers
+        $reusableTickets = array_values(array_diff($inactiveTickets, $activeTickets));
 
-            $ticketNumber = ++$maxTicketNumberCache[$date];
-
-            // Step 4: Final safety check before returning (in case of race condition)
-            $existsAgain = DB::table('generated_tickets')
-                ->where('ticket_number', $ticketNumber)
-                ->whereBetween('created_at', [$dateStart, $dateEnd])
-                ->exists();
-
-            if (!$existsAgain) {
-                return $ticketNumber;
-            }
-
-            // Optional: Clean up Redis issued set in case of duplication
-            // This avoids infinite loop if Redis keeps giving the same duplicate
-            $this->redis->srem("tickets:issued:$date", $ticketNumber);
+        // Step 5: Reassign canceled tickets in ascending order
+        if (!empty($reusableTickets)) {
+            return $reusableTickets[0]; // assign first (lowest) one
         }
+
+        // Otherwise use Redis-generated ticket number
+        return $redisTicket;
     }
     protected function getCancelledTickets($date)
     {
