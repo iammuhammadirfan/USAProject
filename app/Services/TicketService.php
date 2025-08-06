@@ -188,7 +188,6 @@ class TicketService
 
             throw new \Exception('You already have a ticket for today');
         } else {
-
             $ticketNumber = $this->generateNextTicketNumber($todaysDate);
 
             \Log::info('cancelled single tickets not found.Ticket to issue is ' . $ticketNumber);
@@ -464,61 +463,11 @@ class TicketService
             ->where(['ticket_number' => $ticket, 'is_cancelled' => 0, 'status' => 1])
             ->exists();
     }
-
-    // protected function generateNextTicketNumber($date)
-    // {
-    //     $lockToken = uniqid();
-
-    //     [$nextTicket, $currentTicket] = Redis::eval(
-    //         $TICKET_LUA_WITH_CURRENT,
-    //         4,
-    //         "tickets:counter:$date",
-    //         "tickets:issued:$date",
-    //         "tickets:cancelled:$date",
-    //         "tickets:max_numbers",
-    //        $date,
-    //         $lockToken
-    //     );
-    // }
-
-    // protected function generateNextTicketNumber($date)
-    // {
-    //     $lockToken = uniqid();
-
-    //     return $this->redis->eval(
-    //         self::TICKET_LUA,
-    //         4, // Number of keys
-    //         "tickets:counter:$date",
-    //         "tickets:issued:$date",
-    //         "tickets:cancelled:$date",
-    //         "tickets:max_numbers",
-    //         $date,
-    //         $lockToken
-    //     );
-    // }
-
-    // protected function generateNextMultipleTicketNumber($date)
-    // {
-    //     $lockToken = Str::uuid()->toString();
-
-    //     return (int) Redis::eval(
-    //         self::TICKET_LUA_GET_CURRENT,
-    //         3, // Number of Redis KEYS
-    //         "tickets:counter:$date",
-    //         "tickets:issued:$date",
-    //         "tickets:max_numbers",
-    //         now()->format('Y-m-d'),
-    //         $lockToken
-    //     );
-    // }
     protected function generateNextTicketNumber($date)
     {
         $lockToken = uniqid();
-        $dateStart = "$date 00:00:00";
-        $dateEnd = "$date 23:59:59";
 
-         // Step 1: Always call Redis to bump counter and reserve ticket number
-        $redisTicket = (int) Redis::eval(
+        return $this->redis->eval(
             self::TICKET_LUA,
             4, // Number of keys
             "tickets:counter:$date",
@@ -528,78 +477,23 @@ class TicketService
             $date,
             $lockToken
         );
-
-        // Step 2: Get inactive (canceled) ticket numbers in ASCENDING order
-        $inactiveTickets = DB::table('generated_tickets')
-            ->where('is_active', 0)
-            ->whereBetween('created_at', [$dateStart, $dateEnd])
-            ->orderBy('ticket_number', 'asc') // 👈 Ensures correct order!
-            ->pluck('ticket_number')
-            ->toArray();
-
-        // Step 3: Get active (already used) ticket numbers
-        $activeTickets = DB::table('generated_tickets')
-            ->where('is_active', 1)
-            ->whereBetween('created_at', [$dateStart, $dateEnd])
-            ->pluck('ticket_number')
-            ->toArray();
-
-        // Step 4: Find reusable ticket numbers
-        $reusableTickets = array_values(array_diff($inactiveTickets, $activeTickets));
-
-        // Step 5: Reassign canceled tickets in ascending order
-        if (!empty($reusableTickets)) {
-            return $reusableTickets[0]; // assign first (lowest) one
-        }
-
-        // Otherwise use Redis-generated ticket number
-        return $redisTicket;
     }
-
 
     protected function generateNextMultipleTicketNumber($date)
     {
         $lockToken = Str::uuid()->toString();
-        $dateStart = "$date 00:00:00";
-        $dateEnd = "$date 23:59:59";
 
-        // Step 1: Always call Redis to bump counter and reserve ticket number
-        $redisTicket = (int) Redis::eval(
+        return (int) Redis::eval(
             self::TICKET_LUA_GET_CURRENT,
-            3,
+            3, // Number of Redis KEYS
             "tickets:counter:$date",
             "tickets:issued:$date",
             "tickets:max_numbers",
             now()->format('Y-m-d'),
             $lockToken
         );
-
-        // Step 2: Get inactive (canceled) ticket numbers in ASCENDING order
-        $inactiveTickets = DB::table('generated_tickets')
-            ->where('is_active', 0)
-            ->whereBetween('created_at', [$dateStart, $dateEnd])
-            ->orderBy('ticket_number', 'asc') // 👈 Ensures correct order!
-            ->pluck('ticket_number')
-            ->toArray();
-
-        // Step 3: Get active (already used) ticket numbers
-        $activeTickets = DB::table('generated_tickets')
-            ->where('is_active', 1)
-            ->whereBetween('created_at', [$dateStart, $dateEnd])
-            ->pluck('ticket_number')
-            ->toArray();
-
-        // Step 4: Find reusable ticket numbers
-        $reusableTickets = array_values(array_diff($inactiveTickets, $activeTickets));
-
-        // Step 5: Reassign canceled tickets in ascending order
-        if (!empty($reusableTickets)) {
-            return $reusableTickets[0]; // assign first (lowest) one
-        }
-
-        // Otherwise use Redis-generated ticket number
-        return $redisTicket;
     }
+
     protected function getCancelledTickets($date)
     {
         $cancelledTicketsKey = "tickets:cancelled:$date";
@@ -617,16 +511,113 @@ class TicketService
     protected function createTicket($userId, $ticketNumber, $generatedBy, $request)
     {
         \Log::info($userId . ',' . $ticketNumber . ',' . $generatedBy);
+        $today = Carbon::today();
+        // 1. Check if the same ticket_number exists, is inactive, and created today
+        $canceledTicketToday = DB::table('generated_tickets')
+            ->where('is_active', 0)
+            ->whereDate('created_at', $today)
+            ->first(); // this returns an object
 
-        $ticketId = DB::table('generated_tickets')->insertGetId([
-            'user_id' => $userId,
-            'is_first' => 1,
-            'ticket_number' => $ticketNumber,
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now()
-        ]);
 
-        $savedTicketDetails = generatedTicket::find($ticketId);
+        if ($canceledTicketToday) {
+            // Check if the ticket number exists in the database
+            $existsSameTicket = DB::table('generated_tickets')
+                ->where('ticket_number', $canceledTicketToday->ticket_number)
+                ->Where('is_active', 1)
+                ->exists();
+            if ($existsSameTicket) {
+                // 2. Get all ticket numbers created today
+                $todayTickets = DB::table('generated_tickets')
+                    ->whereDate('created_at', $today)
+                    ->orderBy('ticket_number')
+                    ->pluck('ticket_number')
+                    ->toArray();
+
+                $min = !empty($todayTickets) ? min($todayTickets) : 1;
+                $max = !empty($todayTickets) ? max($todayTickets) : 0;
+
+                // 3. Check for missing numbers
+                $missingNumbers = [];
+                if ($max > 0) {
+                    for ($i = $min; $i <= $max; $i++) {
+                        if (!in_array($i, $todayTickets)) {
+                            $missingNumbers[] = $i;
+                        }
+                    }
+                }
+
+                // 4. Decide ticket number
+                $finalTicketNumber = !empty($missingNumbers)
+                    ? $missingNumbers[0]  // First missing number
+                    : ($max + 1);         // Next in sequence
+
+                // 5. Create new ticket with determined number
+                $ticketId = DB::table('generated_tickets')->insertGetId([
+                    'user_id' => $userId,
+                    'ticket_number' => $finalTicketNumber,
+                    'is_first' => 1,
+                    'created_at' =>  Carbon::now(),
+                    'updated_at' =>  Carbon::now(),
+                ]);
+
+                $savedTicketDetails = generatedTicket::find($ticketId);
+            } else {
+                $ticketId = DB::table('generated_tickets')->insertGetId([
+                    'user_id' => $userId,
+                    'is_first' => 1,
+                    'ticket_number' => $canceledTicketToday->ticket_number,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now()
+                ]);
+                $savedTicketDetails = generatedTicket::find($ticketId);
+            }
+        } else {
+            // 2. Get all ticket numbers created today
+            $todayTickets = DB::table('generated_tickets')
+                ->whereDate('created_at', $today)
+                ->orderBy('ticket_number')
+                ->pluck('ticket_number')
+                ->toArray();
+
+            $min = !empty($todayTickets) ? min($todayTickets) : 1;
+            $max = !empty($todayTickets) ? max($todayTickets) : 0;
+
+            // 3. Check for missing numbers
+            $missingNumbers = [];
+            if ($max > 0) {
+                for ($i = $min; $i <= $max; $i++) {
+                    if (!in_array($i, $todayTickets)) {
+                        $missingNumbers[] = $i;
+                    }
+                }
+            }
+
+            // 4. Decide ticket number
+            $finalTicketNumber = !empty($missingNumbers)
+                ? $missingNumbers[0]  // First missing number
+                : ($max + 1);         // Next in sequence
+
+            // 5. Create new ticket with determined number
+            $ticketId = DB::table('generated_tickets')->insertGetId([
+                'user_id' => $userId,
+                'ticket_number' => $finalTicketNumber,
+                'is_first' => 1,
+                'created_at' =>  Carbon::now(),
+                'updated_at' =>  Carbon::now(),
+            ]);
+
+            $savedTicketDetails = generatedTicket::find($ticketId);
+        }
+
+        // $ticketId = DB::table('generated_tickets')->insertGetId([
+        //     'user_id' => $userId,
+        //     'is_first' => 1,
+        //     'ticket_number' => $ticketNumber,
+        //     'created_at' => Carbon::now(),
+        //     'updated_at' => Carbon::now()
+        // ]);
+
+        // $savedTicketDetails = generatedTicket::find($ticketId);
 
         // Handle return times
         if (session('returnTimesStatus') == 1) {

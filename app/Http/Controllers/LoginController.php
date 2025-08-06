@@ -92,7 +92,7 @@ class LoginController extends Controller
             session()->put('maxTicketsReachedId', 1);
         }
 
-        $dateObj= new DateTime("now", new DateTimeZone("America/Vancouver"));
+        $dateObj= new DateTime("now", new DateTimeZone("Asia/Karachi"));
         $extractedCurrentTime= $dateObj->format("H:i");
         $todaysDate=$dateObj->format("Y-m-d");
         $dayOfTheWeek=strtolower(date('l', strtotime($todaysDate)));
@@ -275,7 +275,7 @@ class LoginController extends Controller
 
                     if ($captalisedUserCaseNumber == $captalisedCaseNumber && strtolower($user->last_name) == strtolower($request->last_name)) 
                     {
-                        $dateObj= new DateTime("now", new DateTimeZone("America/Vancouver"));
+                        $dateObj= new DateTime("now", new DateTimeZone("Asia/Karachi"));
                         $extractedCurrentTime= $dateObj->format("H:i");
                         $todaysDate=$dateObj->format("Y-m-d");
                         $dayOfTheWeek=strtolower(date('l', strtotime($todaysDate)));
@@ -411,7 +411,7 @@ class LoginController extends Controller
         $user = User::where(['last_name'=>$request->last_name,'case_number'=>$request->case_number])
         ->first();
 
-        $dateObject= new DateTime("now", new DateTimeZone("America/Vancouver"));
+        $dateObject= new DateTime("now", new DateTimeZone("Asia/Karachi"));
         $todaysDate=$dateObject->format("Y-m-d");
 
         Auth::login($user);
